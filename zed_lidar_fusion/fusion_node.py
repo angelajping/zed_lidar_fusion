@@ -30,7 +30,6 @@ class FusionNode(Node):
 
     def fusion_callback(self, lidar_msg, camera_msg):
         points = np.array(list(pc2.read_points(lidar_msg, field_names=('x', 'y', 'z'), skip_nans=True)))
-        points[:, 2] = points[:, 2] + 0.08
 
         for obj in camera_msg.objects:
             label = obj.label
