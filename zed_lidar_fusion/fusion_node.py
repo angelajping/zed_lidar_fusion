@@ -19,8 +19,8 @@ class FusionNode(Node):
         # Time synchronizer
         self.sync = ApproximateTimeSynchronizer(
             [self.lidar_sub, self.camera_sub],
-            queue_size=10,
-            slop=0.1
+            queue_size=30,
+            slop=0.5
         )
         self.sync.registerCallback(self.fusion_callback)
 
@@ -29,7 +29,14 @@ class FusionNode(Node):
         self.get_logger().info('Fusion node started!')
 
     def fusion_callback(self, lidar_msg, camera_msg):
-        points = np.array(list(pc2.read_points(lidar_msg, field_names=('x', 'y', 'z'), skip_nans=True)))
+        #self.get_logger().info('fusion_callback triggered!')
+        pts = pc2.read_points(lidar_msg, field_names=('x', 'y', 'z'), skip_nans=True)
+        points = np.array([[p[0], p[1], p[2]] for p in pts])
+        #self.get_logger().info(f'Points shape: {points.shape}, ndim: {points.ndim}')
+
+        if points.ndim != 2 or points.shape[0] == 0:
+            self.get_logger().warn('No LiDAR points received, skipping...')
+            return
 
         for obj in camera_msg.objects:
             label = obj.label
