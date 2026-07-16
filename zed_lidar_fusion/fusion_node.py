@@ -57,6 +57,9 @@ class FusionNode(Node):
         if points.ndim != 2 or points.shape[0] == 0: # checks if array is 2D and that theres at least one point
             self.get_logger().warn('No LiDAR points received, skipping...') # if so, skips cycle, waits for next msg
             return
+        
+        self.get_logger().info(f'Raw LiDAR sample: {raw[0]}')
+        self.get_logger().info(f'Translated LiDAR sample: {points[0]}')
 
         for obj in camera_msg.objects:
             label = obj.label
@@ -71,7 +74,7 @@ class FusionNode(Node):
             z_tolerance = 0.3 # meters up/down
 
             mask = (
-                (np.abs(points[:, 1] - cam_y) < y_tolerance) &
+                (np.abs(points[:, 0] - cam_y) < y_tolerance) & # the axes are swapped
                 (np.abs(points[:, 2] - cam_z) < z_tolerance)
             )
             nearby_points = points[mask]
@@ -81,8 +84,14 @@ class FusionNode(Node):
                 self.get_logger().info(f'No nearby LiDAR points for {label}, skipping...')
                 continue
 
-            depths = nearby_points[:, 0]  # x axis is forward depth
-            nearest_dist = float(np.min(np.abs(depths - cam_x)))  # find nearest distance to camera object
+            depths = nearby_points[:, 1]  # y axis is forward depth bc lidar flips axes
+            #dist_diff = float(np.min(np.abs(depths - cam_x)))  # finds diff btwn lidar and zed obj position
+            #nearest_dist = float(depths[np.argmin(np.abs(depths - cam_x))]) # actually finds nearest dist to camera obj
+            # sort by closeness to camera depth and take average of 5 nearest
+            diffs = np.abs(depths - cam_x)
+            n_closest = min(5, len(depths))  # in case fewer than 5 points exist
+            closest_indices = np.argsort(diffs)[:n_closest]
+            nearest_dist = float(np.mean(depths[closest_indices]))
 
             # String publish for display terminal viewing
             string_msg = String()
@@ -104,9 +113,9 @@ class FusionNode(Node):
             det.results.append(hyp)
 
             # adding 3D position
-            det.bbox.center.position.x = cam_x # TODO currently using camera position, but could use nearest lidar point instead
-            det.bbox.center.position.y = cam_y
-            det.bbox.center.position.z = cam_z
+            det.bbox.center.position.x = float(cam_x) # TODO currently using camera position, but could use nearest lidar point instead
+            det.bbox.center.position.y = float(cam_y)
+            det.bbox.center.position.z = float(cam_z)
             det.bbox.center.orientation.w = 1.0  # means no rotation
 
             detection_array.detections.append(det)
