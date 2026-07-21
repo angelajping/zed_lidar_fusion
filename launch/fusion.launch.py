@@ -24,8 +24,8 @@ def generate_launch_description():
     static_tf = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
-        arguments=['-0.0543', '0', '0.08', '0', '0', '0',    # TODO need to update this with more accurate numbers later
-                   'zed_left_camera_frame', 'laser_link']
+        arguments=['-0.0543', '0', '0.08', '-1.57', '0', '0',    # TODO values could be better
+                   'zed_camera_center', 'laser_link']
                    # note, used to rotate -1.5708
     )
 

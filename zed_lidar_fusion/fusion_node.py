@@ -58,8 +58,8 @@ class FusionNode(Node):
             self.get_logger().warn('No LiDAR points received, skipping...') # if so, skips cycle, waits for next msg
             return
         
-        self.get_logger().info(f'Raw LiDAR sample: {raw[0]}')
-        self.get_logger().info(f'Translated LiDAR sample: {points[0]}')
+        #self.get_logger().info(f'Raw LiDAR sample: {raw[0]}')
+        #self.get_logger().info(f'Translated LiDAR sample: {points[0]}')
 
         for obj in camera_msg.objects:
             label = obj.label
@@ -70,8 +70,8 @@ class FusionNode(Node):
             self.get_logger().info(f'Camera sees: {label} at ({cam_x:.2f}, {cam_y:.2f}, {cam_z:.2f})')
 
             # filtering the points for the lidar to look at 
-            y_tolerance = 0.3 # meters left/right
-            z_tolerance = 0.3 # meters up/down
+            y_tolerance = 0.2 # meters left/right
+            z_tolerance = 0.2 # meters up/down
 
             mask = (
                 (np.abs(points[:, 0] - cam_y) < y_tolerance) & # the axes are swapped
@@ -95,7 +95,12 @@ class FusionNode(Node):
 
             # String publish for display terminal viewing
             string_msg = String()
-            string_msg.data = f'{label} at {nearest_dist:.2f}m\nConfidence Rating: {obj.confidence:.2f}%'
+            string_msg.data = (
+                f'{label} — '
+                f'Camera: {cam_x:.2f}m, '
+                f'LiDAR: {nearest_dist:.2f}m, '
+                f'Confidence: {obj.confidence:.1f}%'
+            )
             self.string_publisher.publish(string_msg)
             self.get_logger().info(f'Published: {string_msg.data}')
 
