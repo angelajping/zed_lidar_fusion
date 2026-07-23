@@ -85,8 +85,19 @@ class FusionNode(Node):
                 continue
 
             depths = nearby_points[:, 1]  # y axis is forward depth bc lidar flips axes
-            #dist_diff = float(np.min(np.abs(depths - cam_x)))  # finds diff btwn lidar and zed obj position
-            #nearest_dist = float(depths[np.argmin(np.abs(depths - cam_x))]) # actually finds nearest dist to camera obj
+            
+            """# find true 3D distances from sensor origin for all nearby points
+            true_distances = np.sqrt(
+                nearby_points[:, 0]**2 + 
+                nearby_points[:, 1]**2 + 
+                nearby_points[:, 2]**2
+            )
+
+            # take average of the 5 closest points to sensor origin
+            n_closest = min(5, len(true_distances))
+            closest_indices = np.argsort(true_distances)[:n_closest]
+            nearest_dist = float(np.mean(true_distances[closest_indices]))"""
+
             # sort by closeness to camera depth and take average of 5 nearest
             diffs = np.abs(depths - cam_x)
             n_closest = min(5, len(depths))  # in case fewer than 5 points exist
